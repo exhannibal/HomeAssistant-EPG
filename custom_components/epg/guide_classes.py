@@ -225,7 +225,11 @@ class Guide:
             display_name = next(channel.children)
             lang = None
             icon = "https://images.open-epg.com/1700.png"
-            if selected_channels == "ALL" or display_name.text in selected_channels:
+            if (
+                selected_channels == "ALL"
+                or display_name.text in selected_channels
+                or channel["id"] in selected_channels
+            ):
                 children = channel.findChildren()
                 for child in children:
                     if child.name == "display-name":
