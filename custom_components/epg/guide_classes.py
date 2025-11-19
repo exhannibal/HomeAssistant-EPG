@@ -114,7 +114,7 @@ class Channel:
         for programme in self._programmes:
             # add timezone offset to fix issue with start date is wrong day
             _start_date = (programme._start + timedelta(hours=utc_offset)).date()
-            if programme._start >= now and _start_date == now.date():
+            if programme._stop >= now and _start_date == now.date():
                 obj = {}
                 obj["title"] = programme.title
                 obj["desc"] = programme.desc
