@@ -1,3 +1,4 @@
+from homeassistant.util import dt as dt_util
 from datetime import datetime, date, timedelta
 from bs4 import BeautifulSoup
 import time
@@ -11,7 +12,6 @@ class Programme:
     def __init__(self, start, stop, title, sub_title, desc, time_zone) -> None:
         """Initialize the sensor."""
 
-        # _LOGGER.debug(f"timezone: {time_zone}")
         self._start = datetime.strptime(start, "%Y%m%d%H%M%S %z")
         self._stop = datetime.strptime(stop, "%Y%m%d%H%M%S %z")
         self.start_hour = self._start.astimezone(time_zone).strftime("%H:%M")
@@ -88,7 +88,7 @@ class Channel:
 
     def get_programmes_from_now_by_end(self) -> dict[str, str]:
         ret = {}
-        now = self._time_zone.localize(datetime.now())
+        now = datetime.now(self._time_zone)
         for programme in self._programmes:
             if programme._stop >= now:
                 ret[programme.start_hour] = (
@@ -102,19 +102,10 @@ class Channel:
         ret = {}
         ret["today"] = {}
 
-        now = self._time_zone.localize(datetime.now())
-        utc_offset = now.utcoffset().total_seconds() / 60 / 60
-        if self._ignore_offset:
-            utc_offset = 0
-        _LOGGER.debug(f"now without utc_offset: {now}")
-        _LOGGER.debug(f"utc_offset: {utc_offset}")
-        now = now + timedelta(hours=utc_offset)
+        now = datetime.now(self._time_zone)
 
-        _LOGGER.debug(f"now with utc_offset: {now}")
         for programme in self._programmes:
-            # add timezone offset to fix issue with start date is wrong day
-            _start_date = (programme._start + timedelta(hours=utc_offset)).date()
-            if programme._stop >= now and _start_date == now.date():
+            if programme._stop >= now and programme._start.astimezone(self._time_zone).date() == now.date():
                 obj = {}
                 obj["title"] = programme.title
                 obj["desc"] = programme.desc
@@ -129,19 +120,13 @@ class Channel:
         ret = {}
         ret["today"] = {}
         ret["tomorrow"] = {}
-        now = self._time_zone.localize(datetime.now())
-        utc_offset = now.utcoffset().total_seconds() / 60 / 60
-        if self._ignore_offset:
-            utc_offset = 0
-        _LOGGER.debug(f"utc_offset: {utc_offset}")
-        _LOGGER.debug(f"now: {now}")
+        now = datetime.now(self._time_zone)
+        tomorrow = now + timedelta(days=1)
 
         for programme in self._programmes:
             if programme._stop >= now:
-                _start_date = (
-                    programme._start + timedelta(hours=utc_offset)
-                ).date()  # add timezone offset to fix issue with time zone for
-                if _start_date == datetime.today().date():
+                prog_date = programme._start.astimezone(self._time_zone).date()
+                if prog_date == now.date():
                     obj = {}
                     obj["title"] = programme.title
                     obj["desc"] = programme.desc
@@ -150,7 +135,7 @@ class Channel:
                     obj["start"] = programme.start_hour
                     obj["end"] = programme.end_hour
                     ret["today"][programme.start_hour] = obj
-                else:
+                elif prog_date == tomorrow.date():
                     obj = {}
                     obj["title"] = programme.title
                     obj["desc"] = programme.desc
@@ -162,14 +147,7 @@ class Channel:
         return ret
 
     def get_current_programme(self) -> Programme:
-        now = self._time_zone.localize(datetime.now())
-        utc_offset = now.utcoffset().total_seconds() / 60 / 60
-        if self._ignore_offset:
-            utc_offset = 0
-        _LOGGER.debug(f"now without utc_offset: {now}")
-        now = now + timedelta(hours=utc_offset)
-        _LOGGER.debug(f"utc_offset: {utc_offset}")
-        _LOGGER.debug(f"now with utc_offset: {now}")
+        now = datetime.now(self._time_zone)
         return next(
             (
                 programme
