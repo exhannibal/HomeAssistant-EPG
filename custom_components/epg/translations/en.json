@@ -8,7 +8,7 @@
           "generated": "Generated File Code",
           "ignore_timezone_offset": "Ignore Timezone Offset (Fix for incorrect time shift)"
         },
-        "description": "Enter the file name as displayed on the [Open EPG website](https://www.open-epg.com/app/index.php). Or specify a generated file code if applicable."
+        "description": "Enter the file name as displayed on the Open EPG website. Or specify a generated file code if applicable."
       },
       "channels": {
         "data": {
@@ -19,7 +19,7 @@
     },
     "error": {
       "no_channels": "No channels were found. Please verify the file name or generated code and try again.",
-      "invalid_file_name": "The file name appears to be invalid. Please double-check and try again. Visit the [Open EPG website](https://www.open-epg.com/app/index.php), click on 'Guides by Country' in the top menu, and search for the correct file."
+      "invalid_file_name": "The file name appears to be invalid. Please double-check and try again. Visit the Open EPG website, click on 'Guides by Country', select your country, and enter the corresponding file name."
     }
   },
   "options": {
@@ -31,7 +31,7 @@
           "generated": "Generated File Code",
           "ignore_timezone_offset": "Ignore Timezone Offset (Fix for incorrect time shift)"
         },
-        "description": "Enter the file name as displayed on the [Open EPG website](https://www.open-epg.com/app/index.php). Or specify a generated file code if applicable."
+        "description": "Enter the file name as displayed on the Open EPG website. Or specify a generated file code if applicable."
       },
       "channels": {
         "data": {
