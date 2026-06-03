@@ -1,6 +1,7 @@
 from homeassistant import config_entries
 import voluptuous as vol
 import os
+import re
 import logging
 import aiohttp
 from typing import Final
@@ -49,10 +50,14 @@ async def fetch_channel_list(hass: HomeAssistant, url):
 
 async def _fetch_channels(hass: HomeAssistant, user_data):
     """Fetch the list of channels from the guide."""
-    file = "".join(user_data["file_name"].split()).lower()
-    channels = await fetch_channel_list(
-        hass, f"https://www.open-epg.com/files/{file}.xml.txt"
-    )
+    raw_name = user_data["file_name"]
+    file = "".join(raw_name.split()).lower()
+    # Check if the original name ends with a digit so it changed to merged or not
+    if re.search(r"\d$", raw_name):
+        url = f"https://www.open-epg.com/files/{file}.xml.txt"
+    else:
+        url = f"https://www.open-epg.com/merged/{file}.xml.txt"
+    channels = await fetch_channel_list(hass, url)
 
     return channels.splitlines() if channels else None
 
