@@ -1,18 +1,28 @@
 # HomeAssistant-EPG
 ![icon](/images/icon@2x.png)
 
+**Fork of [yohaybn/HomeAssistant-EPG](https://github.com/yohaybn/HomeAssistant-EPG)** with **custom XMLTV URL** support (e.g. a Humax Freeview guide published under Home Assistant `/local/epg/`).
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://hacs.xyz/)
 
-Home Assistant integration for EPG (Electronic Program Guide) sensors, using the [open-epg.com EPG guide](https://www.open-epg.com/app/index.php). This integration provides real-time program guide data as sensors within Home Assistant, allowing you to display current and upcoming TV programming.
+Home Assistant integration for EPG (Electronic Program Guide) sensors. Data sources:
 
-## EPG Source Update
+1. **Custom XMLTV URL** — any reachable XMLTV document (recommended for Humax / local cache).
+2. **[open-epg.com](https://www.open-epg.com/app/index.php)** — upstream cloud guide (unchanged).
 
-The integration now uses open-epg.com as its EPG data source. This change was implemented because bevy.be, the previous provider, has transitioned their services. This update is seamless for users and requires no configuration changes.
+Works with the [lovelace-epg-card](https://github.com/yohaybn/lovelace-epg-card) timeline UI.
+
+## Fork changes (v2.8.0)
+
+- Config flow step to choose **Custom XMLTV URL** or open-epg.
+- Default Humax URL example: `http://homeassistant.local:8123/local/epg/humax-epg.xml`
+- Channel picker reads `<channel><display-name>` from the XMLTV file.
+- Does **not** strip the last 3 characters of channel names (open-epg quirk) when using a custom URL.
+- Custom URL cache refresh every **6 hours** (open-epg remains daily).
 
 ## Features
-- Retrieve EPG data from open-epg.com to create program guide sensors in Home Assistant.
-- Supports creating custom EPG files with specific channels for personalized tracking.
+- Retrieve EPG data from open-epg.com **or** a custom XMLTV URL to create program guide sensors.
+- Supports creating custom EPG files with specific channels for personalized tracking (open-epg).
 - Easy integration with Home Assistant's Lovelace UI to display TV programming data.
 
 ## Prerequisites
@@ -23,40 +33,37 @@ The integration now uses open-epg.com as its EPG data source. This change was im
 ## Installation 
 
 ### Installation via HACS (Recommended)
-1. Open HACS in your Home Assistant dashboard.
-2. Search for "HomeAssistant-EPG" in HACS and install it.
+1. Open HACS → Integrations → ⋮ → **Custom repositories**.
+2. Add `https://github.com/exhannibal/HomeAssistant-EPG` as type **Integration**.
+3. Search for "EPG" / "HomeAssistant-EPG" and install.
+4. **Restart Home Assistant** (custom component Python).
 
-[![My Home Assistant](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=HomeAssistant-EPG&owner=yohaybn)
+[![My Home Assistant](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=HomeAssistant-EPG&owner=exhannibal)
 
 ### Manual Installation
-1. Download the repository.
-2. Copy the `custom_components/EPG` folder into your Home Assistant configuration directory under `custom_components`.
-
-
+1. Download this repository (or copy from a clone).
+2. Copy `custom_components/epg` into your Home Assistant configuration directory under `custom_components/`.
+3. Restart Home Assistant.
 
 ## Configuration
 
 ### Using the Config Flow
 
-The integration now uses Home Assistant's UI configuration flow, making it easier to set up and manage. Follow these steps to configure:
-
 1.  Go to **Settings > Devices & Services** in Home Assistant.
-    
-2.  Click **Add Integration** and search for "EPG".
-    
-3.  Follow the prompts:
-    
-    -   **File Name**: Enter the file name or generated file code from open-epg.com.
-        
-    -   **Track Full Schedule**: Enable this option if you want to track the full schedule (2 days). Note that enabling this may increase database size significantly.
-        
-    -   **Generated File Code**: Specify if you're using a custom file.
-  
-        ![Config flow](/images/config_flow.png)
-        
-4.  Select the channels you want to track from the dynamically fetched list.
-    
-5.  Complete the setup to create sensors for the selected channels.
+2.  Click **Add Integration** and search for "EPG" / "HA-EPG".
+3.  Choose a source:
+    - **Custom XMLTV URL (e.g. Humax)** — paste the guide URL, then pick channels.
+    - **open-epg.com** — file name / generated code as upstream.
+4.  Enable **Track Full Schedule** if you want today + tomorrow attributes (may increase DB size).
+5.  Select channels and finish.
+
+#### Humax example
+
+Serve a trimmed XMLTV under HA www (e.g. `www/epg/humax-epg.xml`), then use:
+
+`http://homeassistant.local:8123/local/epg/humax-epg.xml`
+
+Use the [lovelace-epg-card](https://github.com/yohaybn/lovelace-epg-card) with the resulting `sensor.epg_*` entities.
 
 ### Custom files
 open-epg.com allows the creation of custom EPG files with selected channels. To create a custom file:

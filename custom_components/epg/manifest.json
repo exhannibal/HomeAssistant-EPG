@@ -1,11 +1,11 @@
 {
   "domain": "epg",
   "name": "HA-EPG",
-  "codeowners": ["@yohaybn"],
+  "codeowners": ["@exhannibal", "@yohaybn"],
   "config_flow": true,
-  "documentation": "https://github.com/yohaybn/HomeAssistant-EPG",
+  "documentation": "https://github.com/exhannibal/HomeAssistant-EPG",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/yohaybn/HomeAssistant-EPG/issues",
+  "issue_tracker": "https://github.com/exhannibal/HomeAssistant-EPG/issues",
   "requirements": ["beautifulsoup4", "lxml"],
-  "version": "2.7.5"
+  "version": "2.8.0"
 }

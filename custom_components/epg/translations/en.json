@@ -3,6 +3,20 @@
     "step": {
       "user": {
         "data": {
+          "source_type": "EPG data source"
+        },
+        "description": "Choose open-epg.com or a custom XMLTV URL (e.g. Humax guide served from /local/epg/)."
+      },
+      "custom_url": {
+        "data": {
+          "custom_url": "XMLTV URL",
+          "full_schedule": "Track Full Schedule (2 Days)",
+          "ignore_timezone_offset": "Ignore Timezone Offset (Fix for incorrect time shift)"
+        },
+        "description": "Enter a reachable XMLTV URL. For Humax: http://homeassistant.local:8123/local/epg/humax-epg.xml"
+      },
+      "open_epg": {
+        "data": {
           "file_name": "File Name (Or Generated File Code)",
           "full_schedule": "Track Full Schedule (2 Days)",
           "generated": "Generated File Code",
@@ -18,8 +32,9 @@
       }
     },
     "error": {
-      "no_channels": "No channels were found. Please verify the file name or generated code and try again.",
-      "invalid_file_name": "The file name appears to be invalid. Please double-check and try again. Visit the Open EPG website, click on 'Guides by Country', select your country, and enter the corresponding file name."
+      "no_channels": "No channels were found. Please verify the file name, generated code, or XMLTV URL and try again.",
+      "invalid_file_name": "The file name appears to be invalid. Please double-check and try again. Visit the Open EPG website, click on 'Guides by Country', select your country, and enter the corresponding file name.",
+      "invalid_custom_url": "Could not load channels from that URL. Check the XMLTV is reachable from Home Assistant and contains <channel> elements."
     }
   },
   "options": {
@@ -27,11 +42,12 @@
       "init": {
         "data": {
           "file_name": "File Name (Or Generated File Code) do not change!",
+          "custom_url": "XMLTV URL",
           "full_schedule": "Track Full Schedule (2 Days)",
           "generated": "Generated File Code",
           "ignore_timezone_offset": "Ignore Timezone Offset (Fix for incorrect time shift)"
         },
-        "description": "Enter the file name as displayed on the Open EPG website. Or specify a generated file code if applicable."
+        "description": "Update open-epg settings or the custom XMLTV URL."
       },
       "channels": {
         "data": {
@@ -41,7 +57,8 @@
       }
     },
     "error": {
-      "no_channels": "No channels were found. Please verify the file name or generated code and try again."
+      "no_channels": "No channels were found. Please verify the file name, generated code, or XMLTV URL and try again.",
+      "invalid_custom_url": "Could not load channels from that URL. Check the XMLTV is reachable from Home Assistant and contains <channel> elements."
     }
   }
 }

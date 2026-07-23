@@ -192,26 +192,41 @@ class Channel:
 class Guide:
     TIMEZONE = None
 
-    def __init__(self, text, selected_channels, time_zone, ignore_offset=False) -> None:
-        """Initialize the class"""
+    def __init__(
+        self,
+        text,
+        selected_channels,
+        time_zone,
+        ignore_offset=False,
+        strip_open_epg_suffix=True,
+    ) -> None:
+        """Initialize the class.
+
+        strip_open_epg_suffix: open-epg.com display-names often end with a
+        3-char tag; Humax / standard XMLTV must keep the full name.
+        """
         self._channels = []
         self.TIMEZONE = time_zone
         soup = BeautifulSoup(text, "xml")
         _LOGGER.debug(f"TIMEZONE: {time_zone}")
 
         for channel in soup.find_all("channel"):
-            display_name = next(channel.children)
+            display_name_el = channel.find("display-name")
+            raw_name = display_name_el.text if display_name_el else channel.get("id", "")
             lang = None
             icon = "https://images.open-epg.com/1700.png"
             if (
                 selected_channels == "ALL"
-                or display_name.text in selected_channels
+                or raw_name in selected_channels
                 or channel["id"] in selected_channels
             ):
                 children = channel.findChildren()
+                display_name = raw_name
                 for child in children:
                     if child.name == "display-name":
-                        display_name = child.text[:-3]
+                        display_name = child.text
+                        if strip_open_epg_suffix and len(display_name) > 3:
+                            display_name = display_name[:-3]
                         lang = child.get("lang")
                         continue
                     if child.name == "icon":

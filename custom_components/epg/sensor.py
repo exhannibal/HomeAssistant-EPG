@@ -28,7 +28,15 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
-from .const import DOMAIN, ICON
+from .const import (
+    CONF_CUSTOM_URL,
+    CONF_SOURCE_TYPE,
+    DOMAIN,
+    ICON,
+    MIN_TIME_BETWEEN_UPDATES_CUSTOM,
+    SOURCE_CUSTOM_URL,
+    SOURCE_OPEN_EPG,
+)
 from .guide_classes import Guide
 from datetime import timedelta
 
@@ -54,18 +62,36 @@ class EpgDataUpdateCoordinator(DataUpdateCoordinator[Guide | None]):
             update_interval=update_interval,
         )
 
+    def _is_custom_source(self) -> bool:
+        return (
+            self.config_options.get(CONF_SOURCE_TYPE, SOURCE_OPEN_EPG)
+            == SOURCE_CUSTOM_URL
+        )
+
     def need_to_update(self, file_path: str) -> bool:
-        """Check if the file needs to be updated."""
+        """Check if the cached guide file needs a network refresh."""
         if not Path(file_path).exists():
             return True
         file_mod_time = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
-        return (datetime.datetime.now() - file_mod_time) > timedelta(hours=24)
+        max_age = (
+            MIN_TIME_BETWEEN_UPDATES_CUSTOM
+            if self._is_custom_source()
+            else timedelta(hours=24)
+        )
+        return (datetime.datetime.now() - file_mod_time) > max_age
+
+    def _build_guide(self, data, selected_channels, time_zone, ignore_offset):
+        """Parse XMLTV into Guide (preserve open-epg name quirk only for that source)."""
+        return Guide(
+            data,
+            selected_channels,
+            time_zone,
+            ignore_offset,
+            strip_open_epg_suffix=not self._is_custom_source(),
+        )
 
     async def _async_update_data(self) -> Guide | None:
-        """Fetch data from API endpoint.
-
-        if not self.need_to_update(file_path):
-        """
+        """Fetch data from open-epg or a custom XMLTV URL."""
         _LOGGER.debug("Coordinator: Starting data update")
         file_name = self.config_options.get("file_name")
         generated = self.config_options.get("generated", False)
@@ -92,7 +118,11 @@ class EpgDataUpdateCoordinator(DataUpdateCoordinator[Guide | None]):
 
                 else:
                     guide = await self.hass.async_add_executor_job(
-                        Guide, local_data, selected_channels, time_zone, ignore_offset
+                        self._build_guide,
+                        local_data,
+                        selected_channels,
+                        time_zone,
+                        ignore_offset,
                     )
                     _LOGGER.info(
                         "Successfully loaded EPG guide from local file: %s", file_path
@@ -112,7 +142,10 @@ class EpgDataUpdateCoordinator(DataUpdateCoordinator[Guide | None]):
                     file_path,
                     err,
                 )
-        if generated:
+        if self._is_custom_source():
+            guide_url = self.config_options.get(CONF_CUSTOM_URL)
+            selected_channels_param = selected_channels
+        elif generated:
             guide_url = f"https://www.open-epg.com/generate/{file_name}.xml"
             selected_channels_param = "ALL"  # Guide class handles "ALL"
         else:
@@ -133,7 +166,7 @@ class EpgDataUpdateCoordinator(DataUpdateCoordinator[Guide | None]):
 
             if data and "channel" in data:
                 _LOGGER.debug(
-                    f"Coordinator: Successfully fetched guide data for {file_name}"
+                    "Coordinator: Successfully fetched guide data for %s", file_name
                 )
 
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -141,25 +174,35 @@ class EpgDataUpdateCoordinator(DataUpdateCoordinator[Guide | None]):
                 await self.hass.async_add_executor_job(write_file, file_path, data)
                 # Parse the guide data
                 guide = await self.hass.async_add_executor_job(
-                    Guide, data, selected_channels_param, time_zone, ignore_offset
+                    self._build_guide,
+                    data,
+                    selected_channels_param,
+                    time_zone,
+                    ignore_offset,
                 )
                 _LOGGER.debug(
-                    f"Coordinator: Guide parsed with {len(guide.channels()) if guide else 0} channels."
+                    "Coordinator: Guide parsed with %s channels.",
+                    len(guide.channels()) if guide else 0,
                 )
                 self._guide = guide  # Store the latest guide
                 return guide
             else:
                 _LOGGER.error(
-                    f"Coordinator: No valid 'channel' data received from {guide_url}. Response snippet: {data[:200]}"
+                    "Coordinator: No valid 'channel' data received from %s. "
+                    "Response snippet: %s",
+                    guide_url,
+                    data[:200],
                 )
                 return self._guide  # Keep old data on error
 
         except aiohttp.ClientError as err:
-            _LOGGER.error(f"Coordinator: Error fetching guide from {guide_url}: {err}")
+            _LOGGER.error("Coordinator: Error fetching guide from %s: %s", guide_url, err)
             return self._guide  # Keep old data on transient error
         except Exception as err:
             _LOGGER.exception(
-                f"Coordinator: Unexpected error during update for {file_name}: {err}"
+                "Coordinator: Unexpected error during update for %s: %s",
+                file_name,
+                err,
             )
             # Raise UpdateFailed for unexpected errors
             raise UpdateFailed(f"Unexpected error during update: {err}")
