@@ -264,5 +264,10 @@ class Guide:
     def get_channel_by_id(self, id) -> Channel:
         return next((channel for channel in self._channels if channel.id == id), None)
 
+    def get_channel_by_name(self, name) -> Channel:
+        return next(
+            (channel for channel in self._channels if channel.name() == name), None
+        )
+
     def channels(self):
         return self._channels

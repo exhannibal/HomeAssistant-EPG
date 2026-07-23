@@ -256,32 +256,20 @@ async def _create_entities(coordinator, config_entry):
     if coordinator.data:
         guide: Guide = coordinator.data
         config_options = config_entry.options
-        file_name = config_options.get("file_name")
-        generated = config_options.get("generated", False)
-
-        if generated:
-            entities.extend(
+        # Guide already filtered by selected_channels (name or id). Prefer iterating
+        # the parsed guide — open-epg and Humax pickers store display-names, not XML ids.
+        selected = set(config_options.get("selected_channels") or [])
+        for channel in guide.channels():
+            if selected and channel.name() not in selected and channel.id not in selected:
+                continue
+            entities.append(
                 ChannelSensor(
                     coordinator,
                     channel.id,
                     channel.name(),
                     config_options,
                 )
-                for channel in guide.channels()
             )
-        else:
-            selected_channels_names = config_options.get("selected_channels", [])
-            for channel_name in selected_channels_names:
-                channel = guide.get_channel_by_id(channel_name)
-                if channel:
-                    entities.append(
-                        ChannelSensor(
-                            coordinator,
-                            channel.id,
-                            channel.name(),
-                            config_options,
-                        )
-                    )
     return entities
 
 
